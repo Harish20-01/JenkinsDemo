@@ -8,7 +8,6 @@ pipeline {
     }
 
     tools {
-        jdk 'JDK17'
         maven 'Maven3'
     }
 
@@ -17,43 +16,49 @@ pipeline {
         stage('Checkout') {
             steps {
                 git branch: 'master',
-                        url: 'https://github.com/Harish20-01/JenkinsDemo.git'
+                    url: 'https://github.com/Harish20-01/JenkinsDemo.git'
             }
         }
 
         stage('Build') {
             steps {
-                bat 'mvn clean package'
+                sh 'mvn clean package'
             }
         }
 
         stage('Unit Tests') {
             steps {
-                bat 'mvn test'
+                sh 'mvn test'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                bat 'docker build -t %IMAGE_NAME%:%IMAGE_TAG% .'
+                sh """
+                docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+                """
             }
         }
 
         stage('Run Container') {
             steps {
-                bat '''
-                docker stop demo
-                docker rm demo
-                docker run -d --name demo -p 8080:8080 %IMAGE_NAME%:%IMAGE_TAG%
+                sh '''
+                docker stop demo || true
+                docker rm demo || true
+
+                docker run -d \
+                --name demo \
+                -p 8080:8080 \
+                ${IMAGE_NAME}:${IMAGE_TAG}
                 '''
             }
         }
 
         stage('Health Check') {
             steps {
-                powershell '''
-                Start-Sleep -Seconds 20
-                Invoke-WebRequest http://localhost:8080/health
+                sh '''
+                sleep 20
+                curl http://localhost:8080/health
                 '''
             }
         }
