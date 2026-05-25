@@ -3,7 +3,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "jenkinsDemo"
+        IMAGE_NAME = "jenkinsdemo"
         IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
@@ -16,51 +16,44 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git branch: 'main',
-                        url: 'https://github.com/your-repo/springboot-demo.git'
+                git branch: 'master',
+                        url: 'https://github.com/Harish20-01/JenkinsDemo.git'
             }
         }
 
         stage('Build') {
             steps {
-                sh 'mvn clean package'
+                bat 'mvn clean package'
             }
         }
 
         stage('Unit Tests') {
             steps {
-                sh 'mvn test'
+                bat 'mvn test'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh """
-                docker build \
-                -t ${IMAGE_NAME}:${IMAGE_TAG} .
-                """
+                bat 'docker build -t %IMAGE_NAME%:%IMAGE_TAG% .'
             }
         }
 
         stage('Run Container') {
             steps {
-                sh '''
-                docker stop demo || true
-                docker rm demo || true
-
-                docker run -d \
-                --name demo \
-                -p 8080:8080 \
-                ${IMAGE_NAME}:${IMAGE_TAG}
+                bat '''
+                docker stop demo
+                docker rm demo
+                docker run -d --name demo -p 8080:8080 %IMAGE_NAME%:%IMAGE_TAG%
                 '''
             }
         }
 
         stage('Health Check') {
             steps {
-                sh '''
-                sleep 20
-                curl http://localhost:8080/health
+                powershell '''
+                Start-Sleep -Seconds 20
+                Invoke-WebRequest http://localhost:8080/health
                 '''
             }
         }
